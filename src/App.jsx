@@ -3328,9 +3328,9 @@ export default function FeriOS() {
   // Finance — budgets
   function handleSetBudget(catId,amt)  { setBudgets(function(p){ return Object.assign({},p,{[catId]:amt}); }); fire('Budget updated'); }
   // Finance — savings goals
-  function handleAddGoal(g)   { setSavingsGoals(function(p){ return p.concat([g]); }); fire('Goal created'); }
-  function handleEditGoal(g)  { setSavingsGoals(function(p){ return p.map(function(x){ return x.id===g.id?g:x; }); }); fire('Goal updated'); }
-  function handleDeleteGoal(id){ setSavingsGoals(function(p){ return p.filter(function(g){ return g.id!==id; }); }); fire('Goal removed'); }
+  function handleAddSavingsGoal(g)   { setSavingsGoals(function(p){ return p.concat([g]); }); fire('Goal created'); }
+  function handleEditSavingsGoal(g)  { setSavingsGoals(function(p){ return p.map(function(x){ return x.id===g.id?g:x; }); }); fire('Goal updated'); }
+  function handleDeleteSavingsGoal(id){ setSavingsGoals(function(p){ return p.filter(function(g){ return g.id!==id; }); }); fire('Goal removed'); }
   // Debt CRUD
   function handleAddDebt(d)   { setDebts(function(p){ return p.concat([d]); }); fire(d.name+' added'); }
   function handleEditDebt(d)  { setDebts(function(p){ return p.map(function(x){ return x.id===d.id?d:x; }); }); fire('Debt updated'); }
@@ -3455,7 +3455,7 @@ export default function FeriOS() {
           openManageGoals={function(){ setModal('manageGoals'); }}
         />}
         {tab==='vault'    && <VaultScreen goals={goals} sessions={sessions} streak={streak} rings={rings} badges={badges} onManage={function(){ setModal('manageBadges'); }} onToggle={handleToggleBadge} />}
-        {tab==='finance'  && <FinanceScreen transactions={transactions} incomeCats={incomeCats} expenseCats={expenseCats} budgets={budgets} savingsGoals={savingsGoals} debts={debts} onAddTx={handleAddTx} onEditTx={handleEditTx} onDeleteTx={handleDeleteTx} onAddCat={handleAddCat} onEditCat={handleEditCat} onRemoveCat={handleRemoveCat} onSetBudget={handleSetBudget} onAddGoal={handleAddGoal} onEditGoal={handleEditGoal} onDeleteGoal={handleDeleteGoal} onGoalAchieved={handleGoalAchieved} onAddDebt={handleAddDebt} onEditDebt={handleEditDebt} onDeleteDebt={handleDeleteDebt} addTxSignal={finTxSignal}/>}
+        {tab==='finance'  && <FinanceScreen transactions={transactions} incomeCats={incomeCats} expenseCats={expenseCats} budgets={budgets} savingsGoals={savingsGoals} debts={debts} onAddTx={handleAddTx} onEditTx={handleEditTx} onDeleteTx={handleDeleteTx} onAddCat={handleAddCat} onEditCat={handleEditCat} onRemoveCat={handleRemoveCat} onSetBudget={handleSetBudget} onAddGoal={handleAddSavingsGoal} onEditGoal={handleEditSavingsGoal} onDeleteGoal={handleDeleteSavingsGoal} onGoalAchieved={handleGoalAchieved} onAddDebt={handleAddDebt} onEditDebt={handleEditDebt} onDeleteDebt={handleDeleteDebt} addTxSignal={finTxSignal}/>}
         {tab==='exchange' && <ExchangeScreen wallet={wallet} rewards={rewards} onManage={function(){ setModal('manageRewards'); }} />}
       </div>
 
