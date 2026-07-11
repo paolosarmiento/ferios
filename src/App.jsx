@@ -2381,12 +2381,12 @@ function FinanceScreen({ transactions, incomeCats, expenseCats, budgets, savings
     if(addTxSignal>0){ setShowAddTx(true); setActiveTab('transactions'); }
   },[addTxSignal]);
 
-  // Check savings goals on each render
+  // Check savings goals when netSavings or goals change
   useEffect(function(){
     savingsGoals.forEach(function(g){
       if(!g.achieved&&!g.trophyAdded&&netSavings>=g.target) onGoalAchieved(g.id);
     });
-  },[netSavings]);
+  },[netSavings, savingsGoals]);
 
   var TABS=[{id:'overview',label:'Overview'},{id:'transactions',label:'Transactions'},{id:'budget',label:'Budget'},{id:'goals',label:'Goals'}];
   var tabBar=(
@@ -2538,7 +2538,7 @@ function FinanceScreen({ transactions, incomeCats, expenseCats, budgets, savings
         {transactions.length>0&&(
           <div style={{background:C.card,borderRadius:18,border:'1px solid '+C.border,padding:'4px 14px',marginBottom:12}}>
             <div style={{fontSize:13,fontWeight:700,color:C.text,fontFamily:F,padding:'12px 0 4px'}}>Recent Transactions</div>
-            {transactions.slice(0,5).map(function(t,i){
+            {transactions.slice().sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,5).map(function(t,i){
               return <FinTxRow key={t.id} t={t} incomeCats={incomeCats} expenseCats={expenseCats}
                 onEdit={function(t){setEditingTx(t);setActiveTab('transactions');}} onDelete={onDeleteTx} last={i===Math.min(transactions.length,5)-1}/>;
             })}
@@ -3212,12 +3212,15 @@ export default function FeriOS() {
   }, [rings, goals, sessions, streak, xp, wallet, badges, rewards,
       transactions, incomeCats, expenseCats, budgets, savingsGoals, debts]);
 
-  // Load font
+  // Load font (guard against duplicate injection)
   useEffect(function(){
-    var l = document.createElement('link');
-    l.rel  = 'stylesheet';
-    l.href = 'https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap';
-    document.head.appendChild(l);
+    var href = 'https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap';
+    if (!document.querySelector('link[href="'+href+'"]')) {
+      var l = document.createElement('link');
+      l.rel  = 'stylesheet';
+      l.href = href;
+      document.head.appendChild(l);
+    }
   }, []);
 
   function fire(msg) {
@@ -3256,7 +3259,7 @@ export default function FeriOS() {
 
   function handleSim() {
     if (streak >= 3) { setStreak(1); fire('Streak reset — logged today!'); }
-    else { setStreak(function(s){ return s+1; }); if(streak+1>=3) setTimeout(function(){ fire('Streak dead — log something!'); },400); }
+    else { setStreak(function(s){ return s+1; }); if(streak+1>=3) setTimeout(function(){ fire('3-day streak — keep it going!'); },400); }
   }
 
   function handleLog(session) {
