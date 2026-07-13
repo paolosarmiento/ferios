@@ -1337,12 +1337,13 @@ function goalMetric(g) {
 
 // ── Home Screen ───────────────────────────────────────────────
 function HomeScreen({ rings, goals, streak, sessions, onRingTap, openModal, openGoalModal, openManageRings, openManageGoals }) {
-  const filed   = (function(){
-    const g = goals.find(function(g){ return g.id==='law'; });
-    if (!g) return 0;
-    const stages = g.data.stages||['Open','Active','Done'];
+  // Use the first taskboard goal as the "pleadings" stat
+  const pleadingGoal = goals.find(function(g){ return g.type==='taskboard'; });
+  const filed = (function(){
+    if (!pleadingGoal) return 0;
+    const stages = pleadingGoal.data.stages||['Open','Active','Done'];
     const doneStage = stages[stages.length-1];
-    return (g.data.items||[]).filter(function(it){ return it.stage===doneStage; }).length;
+    return (pleadingGoal.data.items||[]).filter(function(it){ return it.stage===doneStage; }).length;
   })();
   const dateStr = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   return (
@@ -1356,7 +1357,7 @@ function HomeScreen({ rings, goals, streak, sessions, onRingTap, openModal, open
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:12}}>
         {[
           {l:'RINGS DONE', v:rings.filter(function(r){ return r.done>=r.target; }).length+'/'+rings.length, c:C.pink},
-          {l:'PLEADINGS',  v:filed+'/'+((goals.find(function(g){ return g.id==='law'; })||{target:2}).target), c:C.amber},
+          {l:'PLEADINGS',  v:filed+'/'+(pleadingGoal?pleadingGoal.target:'-'), c:C.amber},
           {l:'SESSIONS',   v:String(sessions.length), c:C.cyan},
         ].map(function(s){
           return (
