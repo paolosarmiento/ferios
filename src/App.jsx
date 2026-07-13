@@ -355,7 +355,10 @@ function Sheet({ onClose, title, children, tall, zIndex }) {
       onClick={onClose}>
       <div onClick={function(e){ e.stopPropagation(); }} className="scr sheet-slide"
         style={{width:'100%',background:'#131315',border:'1px solid '+C.borderMid,borderTop:'1px solid rgba(255,255,255,0.07)',borderRadius:'26px 26px 0 0',padding:'20px 22px 52px',maxHeight:tall?'93%':'84%',overflowY:'auto',fontFamily:F,boxShadow:'0 -24px 60px rgba(0,0,0,0.6)'}}>
-        <div style={{width:36,height:4,borderRadius:99,background:'#2A2A2E',margin:'0 auto 22px'}} />
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:22}}>
+          <div style={{width:36,height:4,borderRadius:99,background:'#2A2A2E',margin:'0 auto'}} />
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',padding:4,color:C.t2,lineHeight:1,fontSize:20,marginLeft:'auto'}}>✕</button>
+        </div>
         {title && <div style={{fontSize:18,fontWeight:900,color:C.text,letterSpacing:'-0.03em',marginBottom:22}}>{title}</div>}
         {children}
       </div>
@@ -1443,25 +1446,25 @@ function evalBadge(badge, ctx) {
     case 'allRings':   return r.length > 0 && r.every(function(x){ return x.done >= x.target; });
     case 'muaythai5':  return s.filter(function(x){ var l=x.name.toLowerCase(); return l.includes('muay')||l.includes('boxing'); }).length >= 5;
     case 'bookDone': {
-      var bg = g.find(function(x){ return x.id==='book'; });
+      var bg = g.find(function(x){ return x.type==='progress'; });
       return bg ? (bg.data.completed || (bg.data.current||bg.data.page||0) >= (bg.data.total||1)) : false;
     }
     case 'filed10': {
-      var lg = g.find(function(x){ return x.id==='law'; });
+      var lg = g.find(function(x){ return x.type==='taskboard'; });
       if (!lg) return false;
       var ds = (lg.data.stages||['Open','Active','Done']);
       return (lg.data.items||[]).filter(function(x){ return x.stage===ds[ds.length-1]; }).length >= 10;
     }
     case 'speaking2': {
-      var spg = g.find(function(x){ return x.id==='speaking'; });
+      var spg = g.find(function(x){ return x.type==='eventlog'; });
       return spg ? (spg.data.entries||[]).length >= 2 : false;
     }
     case 'seminar3': {
-      var smg = g.find(function(x){ return x.id==='seminars'; });
-      return smg ? (smg.data.entries||[]).length >= 3 : false;
+      var smg = g.find(function(x){ return x.type==='eventlog' && (x.data.entries||[]).length >= 3; });
+      return !!smg;
     }
     case 'doubleGold': {
-      var dlg = g.find(function(x){ return x.id==='law'; });
+      var dlg = g.find(function(x){ return x.type==='taskboard'; });
       if (!dlg) return false;
       var dds = (dlg.data.stages||['Open','Active','Done']);
       var filed = (dlg.data.items||[]).filter(function(x){ return x.stage===dds[dds.length-1]; }).length;
@@ -1483,22 +1486,22 @@ function badgeProg(badge, ctx) {
       return Math.min(Math.round((cnt/5)*100), 100);
     }
     case 'bookDone': {
-      var bg = g.find(function(x){ return x.id==='book'; });
+      var bg = g.find(function(x){ return x.type==='progress'; });
       if (!bg) return 0;
       return Math.min(Math.round(((bg.data.current||bg.data.page||0)/(bg.data.total||1))*100), 100);
     }
     case 'filed10': {
-      var lg = g.find(function(x){ return x.id==='law'; });
+      var lg = g.find(function(x){ return x.type==='taskboard'; });
       if (!lg) return 0;
       var ds = (lg.data.stages||['Open','Active','Done']);
       return Math.min(Math.round(((lg.data.items||[]).filter(function(x){ return x.stage===ds[ds.length-1]; }).length/10)*100), 100);
     }
     case 'speaking2': {
-      var spg = g.find(function(x){ return x.id==='speaking'; });
+      var spg = g.find(function(x){ return x.type==='eventlog'; });
       return spg ? Math.min(Math.round(((spg.data.entries||[]).length/2)*100), 100) : 0;
     }
     case 'seminar3': {
-      var smg = g.find(function(x){ return x.id==='seminars'; });
+      var smg = g.find(function(x){ return x.type==='eventlog'; });
       return smg ? Math.min(Math.round(((smg.data.entries||[]).length/3)*100), 100) : 0;
     }
     default: return 0;
@@ -1796,8 +1799,7 @@ function VaultScreen({ goals, sessions, streak, rings, badges, onManage, onToggl
   );
 }
 
-function ExchangeScreen({ wallet, rewards, onManage }) {
-  const [redeemed, setRedeemed] = useState([]);
+function ExchangeScreen({ wallet, rewards, onManage, onRedeem, redeemed, onRedeemItem }) {
   const tc = {1:C.green, 2:C.cyan, 3:C.pink};
   const tlabel = {1:'TIER 1 · MICRO', 2:'TIER 2 · MID', 3:'TIER 3 · MACRO'};
 
@@ -1880,7 +1882,7 @@ function ExchangeScreen({ wallet, rewards, onManage }) {
                         <span style={{fontSize:11,fontWeight:700,color:C.green,fontFamily:F}}>Redeemed</span>
                       </div>
                     ) : can ? (
-                      <button onClick={function(){ setRedeemed(function(p){ return p.concat([r.id]); }); }}
+                      <button onClick={function(){ if(onRedeemItem) onRedeemItem(r.id); if(onRedeem) onRedeem(r.cost); }}
                         style={{width:'100%',border:'none',borderRadius:12,padding:'10px 0',fontSize:12,fontWeight:800,letterSpacing:'0.04em',fontFamily:F,cursor:'pointer',background:col,color:'#000',boxShadow:'0 4px 16px '+col+'55'}}>
                         {'Redeem · '+r.cost.toLocaleString()+' XP'}
                       </button>
@@ -3147,6 +3149,7 @@ export default function FeriOS() {
   const [wallet,   setWallet]  = useState(saved?.wallet   ?? BASE.wallet);
   const [badges,       setBadges]      = useState(saved?.badges       || INIT_BADGES);
   const [rewards,      setRewards]     = useState(saved?.rewards      || INIT_REWARDS);
+  const [redeemed,     setRedeemed]    = useState(saved?.redeemed     || []);
   const [transactions, setTransactions]= useState(saved?.transactions || INIT_TRANSACTIONS);
   const [incomeCats,   setIncomeCats]  = useState(saved?.incomeCats   || INIT_INCOME_CATS);
   const [expenseCats,  setExpenseCats] = useState(saved?.expenseCats  || INIT_EXPENSE_CATS);
@@ -3162,7 +3165,7 @@ export default function FeriOS() {
 
   function handleExport() {
     var data = { rings, goals, sessions, streak, lastLogDate, xp, wallet, badges, rewards,
-                 transactions, incomeCats, expenseCats, budgets, savingsGoals, debts,
+                 redeemed, transactions, incomeCats, expenseCats, budgets, savingsGoals, debts,
                  exportedAt: new Date().toISOString() };
     var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
     var url  = URL.createObjectURL(blob);
@@ -3194,6 +3197,7 @@ export default function FeriOS() {
           if (d.wallet != null) setWallet(d.wallet);
           if (d.badges)        setBadges(d.badges);
           if (d.rewards)       setRewards(d.rewards);
+          if (d.redeemed)      setRedeemed(d.redeemed);
           if (d.transactions)  setTransactions(d.transactions);
           if (d.incomeCats)    setIncomeCats(d.incomeCats);
           if (d.expenseCats)   setExpenseCats(d.expenseCats);
@@ -3224,9 +3228,9 @@ export default function FeriOS() {
   // Persist all state to localStorage on every change
   useEffect(function(){
     saveState({ rings, goals, sessions, streak, lastLogDate, xp, wallet, badges, rewards,
-                transactions, incomeCats, expenseCats, budgets, savingsGoals, debts });
+                redeemed, transactions, incomeCats, expenseCats, budgets, savingsGoals, debts });
   }, [rings, goals, sessions, streak, lastLogDate, xp, wallet, badges, rewards,
-      transactions, incomeCats, expenseCats, budgets, savingsGoals, debts]);
+      redeemed, transactions, incomeCats, expenseCats, budgets, savingsGoals, debts]);
 
   // Load font (guard against duplicate injection)
   useEffect(function(){
@@ -3273,13 +3277,8 @@ export default function FeriOS() {
       setTimeout(function(){ fire('All rings closed — legendary week!'); }, 700);
   }
 
-  function handleSim() {
-    if (streak >= 3) { setStreak(1); fire('Streak reset — logged today!'); }
-    else { setStreak(function(s){ return s+1; }); if(streak+1>=3) setTimeout(function(){ fire('3-day streak — keep it going!'); },400); }
-  }
-
   function handleLog(session) {
-    setSess(function(p){ return [session].concat(p).slice(0,20); });
+    setSess(function(p){ return [session].concat(p).slice(0,50); });
     gain(session.xp, session.name+'  +'+session.xp+' XP');
     // Advance streak only once per day
     var today = todayStr();
@@ -3481,7 +3480,7 @@ export default function FeriOS() {
         />}
         {tab==='vault'    && <VaultScreen goals={goals} sessions={sessions} streak={streak} rings={rings} badges={badges} onManage={function(){ setModal('manageBadges'); }} onToggle={handleToggleBadge} />}
         {tab==='finance'  && <FinanceScreen transactions={transactions} incomeCats={incomeCats} expenseCats={expenseCats} budgets={budgets} savingsGoals={savingsGoals} debts={debts} onAddTx={handleAddTx} onEditTx={handleEditTx} onDeleteTx={handleDeleteTx} onAddCat={handleAddCat} onEditCat={handleEditCat} onRemoveCat={handleRemoveCat} onSetBudget={handleSetBudget} onAddGoal={handleAddSavingsGoal} onEditGoal={handleEditSavingsGoal} onDeleteGoal={handleDeleteSavingsGoal} onGoalAchieved={handleGoalAchieved} onAddDebt={handleAddDebt} onEditDebt={handleEditDebt} onDeleteDebt={handleDeleteDebt} addTxSignal={finTxSignal}/>}
-        {tab==='exchange' && <ExchangeScreen wallet={wallet} rewards={rewards} onManage={function(){ setModal('manageRewards'); }} />}
+        {tab==='exchange' && <ExchangeScreen wallet={wallet} rewards={rewards} redeemed={redeemed} onManage={function(){ setModal('manageRewards'); }} onRedeem={function(cost){ setWallet(function(p){ return Math.max(0,p-cost); }); }} onRedeemItem={function(id){ setRedeemed(function(p){ return p.concat([id]); }); }} />}
       </div>
 
       {/* Context-aware FAB */}
