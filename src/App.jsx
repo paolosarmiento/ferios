@@ -452,7 +452,7 @@ function Ring({ done, target, color, Icon, label }) {
 }
 
 // ── Flame ─────────────────────────────────────────────────────
-function FlameCard({ streak, onSim }) {
+function FlameCard({ streak }) {
   const alive = streak < 3;
   const left  = Math.max(0, 3-streak);
   const sc    = alive ? C.amber : C.red;
@@ -469,7 +469,6 @@ function FlameCard({ streak, onSim }) {
           <div style={{fontSize:14,fontWeight:800,color:sc,fontFamily:F}}>{alive ? 'Streak Active' : 'Streak Dead'}</div>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
             <span style={{fontSize:11,fontWeight:800,color:sc,fontFamily:F}}>Day {streak}/3</span>
-            <button onClick={onSim} style={{background:C.card2,border:'1px solid '+C.border,borderRadius:99,padding:'4px 12px',fontSize:9,fontWeight:700,color:C.t2,cursor:'pointer',letterSpacing:'0.05em',fontFamily:F,minHeight:28}}>+1 DAY</button>
           </div>
         </div>
         <div style={{height:3,background:C.border,borderRadius:99,overflow:'hidden',marginBottom:8}}>
@@ -1337,7 +1336,7 @@ function goalMetric(g) {
 }
 
 // ── Home Screen ───────────────────────────────────────────────
-function HomeScreen({ rings, goals, streak, sessions, onRingTap, onSim, openModal, openGoalModal, openManageRings, openManageGoals }) {
+function HomeScreen({ rings, goals, streak, sessions, onRingTap, openModal, openGoalModal, openManageRings, openManageGoals }) {
   const filed   = (function(){
     const g = goals.find(function(g){ return g.id==='law'; });
     if (!g) return 0;
@@ -1368,7 +1367,7 @@ function HomeScreen({ rings, goals, streak, sessions, onRingTap, onSim, openModa
           );
         })}
       </div>
-      <FlameCard streak={streak} onSim={onSim} />
+      <FlameCard streak={streak} />
       {/* Weekly Movement Rings */}
       <div style={{background:C.card,borderRadius:20,border:'1px solid '+C.border,padding:'18px 18px',marginBottom:12,boxShadow:'inset 0 1px 0 rgba(255,255,255,0.04)'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
@@ -3265,6 +3264,8 @@ export default function FeriOS() {
   function handleLog(session) {
     setSess(function(p){ return [session].concat(p).slice(0,20); });
     gain(session.xp, session.name+'  +'+session.xp+' XP');
+    // Advance streak on every logged session (cap at 3)
+    setStreak(function(s){ return Math.min(s + 1, 3); });
     const rid = detectRingFromRings(session.name, rings);
     if (rid) {
       const m = rings.find(function(r){ return r.id===rid; });
@@ -3451,7 +3452,7 @@ export default function FeriOS() {
       {/* Scroll area */}
       <div className="scr" style={{position:'absolute',top:H+4,bottom:N,left:0,right:0,overflowY:'auto',padding:'18px 16px 100px'}}>
         {tab==='home'     && <HomeScreen rings={rings} goals={goals} streak={streak} sessions={sessions}
-          onRingTap={handleRingTap} onSim={handleSim}
+          onRingTap={handleRingTap}
           openModal={function(m){ setModal(m); }}
           openGoalModal={function(id){ setModal({type:'goal',id}); }}
           openManageRings={function(){ setModal('manageRings'); }}
