@@ -453,30 +453,31 @@ function Ring({ done, target, color, Icon, label }) {
 
 // ── Flame ─────────────────────────────────────────────────────
 function FlameCard({ streak }) {
-  const alive = streak < 3;
-  const left  = Math.max(0, 3-streak);
-  const sc    = alive ? C.amber : C.red;
-  const glowC = alive ? 'rgba(255,159,67,0.18)' : 'rgba(255,71,87,0.18)';
+  const dead  = streak === 0;
+  const full  = streak >= 3;
+  const left  = Math.max(0, 3 - streak);
+  const sc    = dead ? C.red : full ? C.green : C.amber;
+  const label = dead ? 'Streak Dead' : full ? 'Streak Complete!' : 'Streak Active';
+  const sub   = dead ? 'Log an activity to start your streak'
+              : full ? 'Amazing! 3 days strong — keep it going!'
+              : (left + ' day' + (left !== 1 ? 's' : '') + ' left — keep the fire burning');
+  const barColor = dead ? C.red : full ? C.green : streak < 2 ? C.amber : C.pink;
   return (
-    <div style={{background:C.card,borderRadius:20,border:'1px solid '+(alive?'rgba(255,159,67,0.18)':C.border),padding:'16px 18px',marginBottom:12,display:'flex',alignItems:'center',gap:14,boxShadow:alive?'0 2px 24px rgba(255,159,67,0.06)':'none'}}>
+    <div style={{background:C.card,borderRadius:20,border:'1px solid '+(dead?C.border:sc+'28'),padding:'16px 18px',marginBottom:12,display:'flex',alignItems:'center',gap:14,boxShadow:dead?'none':'0 2px 24px '+sc+'10'}}>
       <IBox color={sc}>
-        <div className={alive ? 'flame' : ''}>
-          {alive ? <Flame size={22} color={sc} /> : <AlertCircle size={22} color={sc} />}
+        <div className={(!dead && !full) ? 'flame' : ''}>
+          {dead ? <AlertCircle size={22} color={sc} /> : <Flame size={22} color={sc} />}
         </div>
       </IBox>
       <div style={{flex:1}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:9}}>
-          <div style={{fontSize:14,fontWeight:800,color:sc,fontFamily:F}}>{alive ? 'Streak Active' : 'Streak Dead'}</div>
-          <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <span style={{fontSize:11,fontWeight:800,color:sc,fontFamily:F}}>Day {streak}/3</span>
-          </div>
+          <div style={{fontSize:14,fontWeight:800,color:sc,fontFamily:F}}>{label}</div>
+          <span style={{fontSize:11,fontWeight:800,color:sc,fontFamily:F}}>Day {streak}/3</span>
         </div>
         <div style={{height:3,background:C.border,borderRadius:99,overflow:'hidden',marginBottom:8}}>
-          <div style={{height:'100%',borderRadius:99,width:((streak/3)*100)+'%',background:streak<2?C.amber:streak<3?C.red:'#444',transition:'width 0.6s cubic-bezier(0.4,0,0.2,1)',boxShadow:'0 0 8px '+sc+'80'}} />
+          <div style={{height:'100%',borderRadius:99,width:((streak/3)*100)+'%',background:barColor,transition:'width 0.6s cubic-bezier(0.4,0,0.2,1)',boxShadow:'0 0 8px '+sc+'80'}} />
         </div>
-        <div style={{fontSize:11,fontWeight:500,color:C.t2,fontFamily:F}}>
-          {alive ? (left+' day'+(left!==1?'s':'')+' left — keep the fire burning') : 'Log an activity to restart'}
-        </div>
+        <div style={{fontSize:11,fontWeight:500,color:C.t2,fontFamily:F}}>{sub}</div>
       </div>
     </div>
   );
