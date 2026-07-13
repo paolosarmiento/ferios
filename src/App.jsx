@@ -1357,7 +1357,7 @@ function HomeScreen({ rings, goals, streak, sessions, onRingTap, openModal, open
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:12}}>
         {[
           {l:'RINGS DONE', v:rings.filter(function(r){ return r.done>=r.target; }).length+'/'+rings.length, c:C.pink},
-          {l:'PLEADINGS',  v:filed+'/'+(pleadingGoal?pleadingGoal.target:'-'), c:C.amber},
+          {l:'PRO TARGETS', v:filed+'/'+(pleadingGoal?pleadingGoal.target:'-'), c:C.amber},
           {l:'SESSIONS',   v:String(sessions.length), c:C.cyan},
         ].map(function(s){
           return (
