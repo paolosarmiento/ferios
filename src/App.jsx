@@ -3141,7 +3141,8 @@ export default function FeriOS() {
   const [rings,    setRings]   = useState(saved?.rings    || INIT_RINGS);
   const [goals,    setGoals]   = useState(saved?.goals    || INIT_GOALS);
   const [sessions, setSess]    = useState(saved?.sessions || DEMO);
-  const [streak,   setStreak]  = useState(saved?.streak   ?? 0);
+  const [streak,      setStreak]    = useState(saved?.streak      ?? 0);
+  const [lastLogDate, setLastLogDate] = useState(saved?.lastLogDate ?? null);
   const [xp,       setXp]      = useState(saved?.xp       ?? BASE.xp);
   const [wallet,   setWallet]  = useState(saved?.wallet   ?? BASE.wallet);
   const [badges,       setBadges]      = useState(saved?.badges       || INIT_BADGES);
@@ -3160,7 +3161,7 @@ export default function FeriOS() {
   const [showChangePw, setShowChangePw] = useState(false);
 
   function handleExport() {
-    var data = { rings, goals, sessions, streak, xp, wallet, badges, rewards,
+    var data = { rings, goals, sessions, streak, lastLogDate, xp, wallet, badges, rewards,
                  transactions, incomeCats, expenseCats, budgets, savingsGoals, debts,
                  exportedAt: new Date().toISOString() };
     var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
@@ -3188,6 +3189,7 @@ export default function FeriOS() {
           if (d.goals)         setGoals(d.goals);
           if (d.sessions)      setSess(d.sessions);
           if (d.streak != null) setStreak(d.streak);
+          if (d.lastLogDate)   setLastLogDate(d.lastLogDate);
           if (d.xp     != null) setXp(d.xp);
           if (d.wallet != null) setWallet(d.wallet);
           if (d.badges)        setBadges(d.badges);
@@ -3206,11 +3208,24 @@ export default function FeriOS() {
     input.click();
   }
 
+  // On mount: check if streak should be reset due to missed days
+  useEffect(function(){
+    if (!lastLogDate) return;
+    var today = todayStr();
+    var last  = new Date(lastLogDate + 'T00:00:00');
+    var now   = new Date(today + 'T00:00:00');
+    var diffDays = Math.round((now - last) / (1000 * 60 * 60 * 24));
+    if (diffDays > 1) {
+      setStreak(0);
+      setLastLogDate(null);
+    }
+  }, []);
+
   // Persist all state to localStorage on every change
   useEffect(function(){
-    saveState({ rings, goals, sessions, streak, xp, wallet, badges, rewards,
+    saveState({ rings, goals, sessions, streak, lastLogDate, xp, wallet, badges, rewards,
                 transactions, incomeCats, expenseCats, budgets, savingsGoals, debts });
-  }, [rings, goals, sessions, streak, xp, wallet, badges, rewards,
+  }, [rings, goals, sessions, streak, lastLogDate, xp, wallet, badges, rewards,
       transactions, incomeCats, expenseCats, budgets, savingsGoals, debts]);
 
   // Load font (guard against duplicate injection)
@@ -3266,8 +3281,12 @@ export default function FeriOS() {
   function handleLog(session) {
     setSess(function(p){ return [session].concat(p).slice(0,20); });
     gain(session.xp, session.name+'  +'+session.xp+' XP');
-    // Advance streak on every logged session (cap at 3)
-    setStreak(function(s){ return Math.min(s + 1, 3); });
+    // Advance streak only once per day
+    var today = todayStr();
+    if (lastLogDate !== today) {
+      setLastLogDate(today);
+      setStreak(function(s){ return Math.min(s + 1, 3); });
+    }
     const rid = detectRingFromRings(session.name, rings);
     if (rid) {
       const m = rings.find(function(r){ return r.id===rid; });
